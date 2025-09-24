@@ -169,7 +169,7 @@ const Components: React.FC = () => {
                   <CardTitle className="text-lg font-semibold mb-1">
                     {component.name}
                   </CardTitle>
-                  <CardDescription className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
                       {component.category}
                     </Badge>
@@ -177,7 +177,7 @@ const Components: React.FC = () => {
                     <span className="text-xs text-muted-foreground">
                       ID: {component.id}
                     </span>
-                  </CardDescription>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   {getStatusIcon(component.status)}
