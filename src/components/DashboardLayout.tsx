@@ -22,12 +22,13 @@ import {
   TrendingUp, 
   Settings, 
   LogOut,
-  Bell,
   User
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { useInventory } from '@/contexts/InventoryContext';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationPanel } from '@/components/NotificationPanel';
 
 const navigation = [
   { name: 'Analytics', href: '/dashboard', icon: BarChart3 },
@@ -168,8 +169,6 @@ const AppSidebar: React.FC = () => {
 
 const DashboardHeader: React.FC = () => {
   const { user } = useAuth();
-  const { riskAlerts } = useInventory();
-  const unreadAlerts = riskAlerts.filter(alert => !alert.resolved).length;
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 shadow-sm">
@@ -190,23 +189,9 @@ const DashboardHeader: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          size="sm"
-          className="relative hover:bg-accent"
-          title="Notifications"
-        >
-          <Bell className="w-5 h-5" />
-          {unreadAlerts > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-xs p-0"
-            >
-              {unreadAlerts}
-            </Badge>
-          )}
-        </Button>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <NotificationPanel />
       </div>
     </header>
   );

@@ -5,20 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  Edit, 
-  MapPin, 
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  AlertCircle,
-  Package2
-} from 'lucide-react';
+import { Search, Filter, Package, TrendingUp, TrendingDown, AlertTriangle, Eye, Plus, Minus, Package2, MapPin, Calendar, Edit, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AddComponentDialog } from '@/components/AddComponentDialog';
 
 const Components: React.FC = () => {
   const { components, updateComponent } = useInventory();

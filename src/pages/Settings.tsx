@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useInventory } from '@/contexts/InventoryContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,20 +12,22 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Settings as SettingsIcon, 
   Bell, 
   Shield, 
   Database,
   Mail,
-  Smartphone,
-  AlertTriangle,
-  CheckCircle,
+  User,
+  Phone,
+  Building,
+  Save,
   RefreshCw,
   Download,
   Upload,
   Eye,
-  Palette,
+  Globe,
   Clock,
   Users,
   BarChart3,
@@ -35,17 +38,30 @@ import {
   Bookmark,
   Copy,
   Play,
-  Info
+  Info,
+  AlertTriangle,
+  CheckCircle,
+  Smartphone,
+  Palette
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Settings: React.FC = () => {
+  const { user } = useAuth();
   const { settings, updateSettings, components } = useInventory();
   const { toast } = useToast();
   const [activePreset, setActivePreset] = useState<string>('custom');
   const [themeMode, setThemeMode] = useState<string>('system');
   const [previewMode, setPreviewMode] = useState<boolean>(false);
   const [settingsHistory, setSettingsHistory] = useState<any[]>([]);
+  const [profileData, setProfileData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: '',
+    company: '',
+    department: '',
+    bio: ''
+  });
 
   // Settings presets
   const settingsPresets = {
@@ -301,9 +317,10 @@ const Settings: React.FC = () => {
       )}
 
       <Tabs defaultValue="inventory" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
         </TabsList>
@@ -666,6 +683,7 @@ const Settings: React.FC = () => {
                     <SelectItem value="EUR">🇪🇺 Euro (EUR)</SelectItem>
                     <SelectItem value="GBP">🇬🇧 British Pound (GBP)</SelectItem>
                     <SelectItem value="JPY">🇯🇵 Japanese Yen (JPY)</SelectItem>
+                    <SelectItem value="INR">🇮🇳 Indian Rupee (INR)</SelectItem>
                     <SelectItem value="CAD">🇨🇦 Canadian Dollar (CAD)</SelectItem>
                   </SelectContent>
                 </Select>

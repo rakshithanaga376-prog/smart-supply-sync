@@ -5,24 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Users, 
-  Star, 
-  MapPin, 
-  Mail, 
-  Phone, 
-  Clock, 
-  TrendingUp,
-  TrendingDown,
-  Package,
-  AlertCircle,
-  CheckCircle,
-  Search,
-  Plus,
-  Edit,
-  Eye
-} from 'lucide-react';
+import { Search, Filter, Star, Phone, Mail, MapPin, TrendingUp, AlertCircle, Users, CheckCircle, Clock, Plus, Package, Eye, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AddSupplierDialog } from '@/components/AddSupplierDialog';
 
 const Suppliers: React.FC = () => {
   const { suppliers } = useInventory();
