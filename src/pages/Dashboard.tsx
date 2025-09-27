@@ -1,8 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useInventory } from '@/contexts/InventoryContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AddComponentDialog } from '@/components/AddComponentDialog';
+import { CreatePODialog } from '@/components/CreatePODialog';
 import { 
   LineChart, 
   Line, 
@@ -30,6 +33,7 @@ import {
   Target,
   ShoppingCart
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock data for charts
 const stockData = [
@@ -50,7 +54,9 @@ const categoryData = [
 ];
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { components, riskAlerts, suppliers } = useInventory();
+  const { toast } = useToast();
 
   const totalComponents = components.length;
   const lowStockCount = components.filter(c => c.status === 'Low Stock' || c.status === 'Critical').length;
@@ -61,6 +67,56 @@ const Dashboard: React.FC = () => {
   const totalValue = components.reduce((sum, component) => 
     sum + (component.currentStock * component.cost), 0
   );
+
+  const handleGenerateReport = () => {
+    // Create a comprehensive inventory report
+    const reportData = {
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalComponents,
+        totalValue,
+        lowStockCount,
+        criticalAlerts,
+        overStockedCount,
+        optimalCount
+      },
+      components: components.map(c => ({
+        name: c.name,
+        category: c.category,
+        currentStock: c.currentStock,
+        optimalStock: c.optimalStock,
+        status: c.status,
+        value: c.currentStock * c.cost,
+        supplier: c.supplier
+      })),
+      riskAlerts: riskAlerts.filter(a => !a.resolved),
+      suppliers: suppliers.map(s => ({
+        name: s.name,
+        rating: s.rating,
+        onTimeDelivery: s.onTimeDelivery,
+        components: s.components
+      }))
+    };
+
+    // Generate and download report
+    const dataStr = JSON.stringify(reportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `inventory-report-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    toast({
+      title: "Report Generated",
+      description: "Inventory analytics report has been downloaded"
+    });
+  };
+
+  const handleForecastDemand = () => {
+    navigate('/forecasting');
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -74,22 +130,16 @@ const Dashboard: React.FC = () => {
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Component
-          </Button>
-          <Button variant="outline">
+          <AddComponentDialog />
+          <Button variant="outline" onClick={handleGenerateReport}>
             <FileText className="w-4 h-4 mr-2" />
             Generate Report
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleForecastDemand}>
             <Target className="w-4 h-4 mr-2" />
             Forecast Demand
           </Button>
-          <Button variant="outline">
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Create PO
-          </Button>
+          <CreatePODialog />
         </div>
       </div>
 

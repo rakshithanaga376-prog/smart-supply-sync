@@ -57,6 +57,8 @@ interface InventoryContextType {
   suppliers: Supplier[];
   settings: Settings;
   updateComponent: (id: string, updates: Partial<Component>) => void;
+  addComponent: (component: Omit<Component, 'id'>) => void;
+  addSupplier: (supplier: any) => void;
   addRiskAlert: (alert: Omit<RiskAlert, 'id' | 'date'>) => void;
   resolveAlert: (id: string) => void;
   updateSettings: (newSettings: Partial<Settings>) => void;
@@ -247,6 +249,27 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }
     ));
   };
 
+  const addComponent = (component: Omit<Component, 'id'>) => {
+    const newComponent: Component = {
+      ...component,
+      id: Date.now().toString(),
+      lastRestock: new Date()
+    };
+    setComponents(prev => [...prev, newComponent]);
+  };
+
+  const addSupplier = (supplier: any) => {
+    const newSupplier: Supplier = {
+      id: Date.now().toString(),
+      ...supplier,
+      defectRate: 0.5,
+      leadTime: supplier.leadTime || 7,
+      components: [supplier.category || 'General'],
+      status: 'Active'
+    };
+    setSuppliers(prev => [...prev, newSupplier]);
+  };
+
   const addRiskAlert = (alert: Omit<RiskAlert, 'id' | 'date'>) => {
     const newAlert: RiskAlert = {
       ...alert,
@@ -303,6 +326,8 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }
     suppliers,
     settings,
     updateComponent,
+    addComponent,
+    addSupplier,
     addRiskAlert,
     resolveAlert,
     updateSettings,

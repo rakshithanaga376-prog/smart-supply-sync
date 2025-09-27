@@ -4,13 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Package, TrendingUp, Users, Shield } from 'lucide-react';
+import { Loader2, Package, TrendingUp, Users, Shield, Crown, Settings, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
   const { login, isLoading, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -25,16 +27,16 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!email || !password || !selectedRole) {
       toast({
         title: "Error",
-        description: "Please enter both email and password",
+        description: "Please enter email, password, and select your role",
         variant: "destructive"
       });
       return;
     }
 
-    const success = await login(email, password);
+    const success = await login(email, password, selectedRole);
     
     if (!success) {
       toast({
@@ -45,12 +47,18 @@ export const LoginPage: React.FC = () => {
     } else {
       toast({
         title: "Welcome!",
-        description: "Successfully logged in to Inventory Management System"
+        description: `Successfully logged in as ${selectedRole}`
       });
       // Navigate to dashboard after successful login
       navigate('/dashboard');
     }
   };
+
+  const roleOptions = [
+    { value: 'Admin', label: 'Admin', icon: Crown, description: 'Full system access' },
+    { value: 'Manager', label: 'Manager', icon: Settings, description: 'Management operations' },
+    { value: 'Supply Chain Manager', label: 'Supply Chain Manager', icon: Truck, description: 'Supply chain oversight' }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-primary flex items-center justify-center p-4">
@@ -77,6 +85,28 @@ export const LoginPage: React.FC = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="role">Select Role</Label>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-primary/20">
+                    <SelectValue placeholder="Choose your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleOptions.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        <div className="flex items-center gap-2">
+                          <role.icon className="w-4 h-4" />
+                          <div>
+                            <span className="font-medium">{role.label}</span>
+                            <p className="text-xs text-muted-foreground">{role.description}</p>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -87,6 +117,7 @@ export const LoginPage: React.FC = () => {
                   className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 />
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -98,10 +129,11 @@ export const LoginPage: React.FC = () => {
                   className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                 />
               </div>
+              
               <Button 
                 type="submit" 
                 className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
-                disabled={isLoading}
+                disabled={isLoading || !selectedRole}
               >
                 {isLoading ? (
                   <>

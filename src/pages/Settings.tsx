@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInventory } from '@/contexts/InventoryContext';
+import { useTheme } from 'next-themes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,16 +43,18 @@ import {
   AlertTriangle,
   CheckCircle,
   Smartphone,
-  Palette
+  Palette,
+  Lock,
+  Key
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Settings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const { settings, updateSettings, components } = useInventory();
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [activePreset, setActivePreset] = useState<string>('custom');
-  const [themeMode, setThemeMode] = useState<string>('system');
   const [previewMode, setPreviewMode] = useState<boolean>(false);
   const [settingsHistory, setSettingsHistory] = useState<any[]>([]);
   const [profileData, setProfileData] = useState({
@@ -61,6 +64,13 @@ const Settings: React.FC = () => {
     company: '',
     department: '',
     bio: ''
+  });
+  const [securityData, setSecurityData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    twoFactorEnabled: false,
+    sessionTimeout: 30
   });
 
   // Settings presets
@@ -99,6 +109,51 @@ const Settings: React.FC = () => {
     toast({
       title: "Settings Updated",
       description: `${key.replace(/([A-Z])/g, ' $1').toLowerCase()} has been updated`
+    });
+  };
+
+  const handleProfileSave = () => {
+    updateProfile({
+      name: profileData.name,
+      email: profileData.email
+    });
+    
+    toast({
+      title: "Profile Updated",
+      description: "Your profile information has been saved successfully"
+    });
+  };
+
+  const handlePasswordChange = () => {
+    if (!securityData.currentPassword || !securityData.newPassword) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in both current and new password",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (securityData.newPassword !== securityData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "New password and confirmation don't match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Simulate password change
+    setSecurityData(prev => ({
+      ...prev,
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    }));
+    
+    toast({
+      title: "Password Updated",
+      description: "Your password has been changed successfully"
     });
   };
 
@@ -655,6 +710,202 @@ const Settings: React.FC = () => {
         </Card>
         </TabsContent>
 
+        <TabsContent value="profile" className="space-y-6">
+          {/* Profile Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                Profile Information
+              </CardTitle>
+              <CardDescription>
+                Manage your account information and preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  {user?.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt="Profile" 
+                      className="w-20 h-20 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-10 h-10 text-primary" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{user?.name}</h3>
+                  <p className="text-sm text-muted-foreground">{user?.role}</p>
+                  <Badge variant="secondary" className="mt-1">
+                    {user?.role}
+                  </Badge>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="profileName">Full Name</Label>
+                  <Input
+                    id="profileName"
+                    value={profileData.name}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Your full name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profileEmail">Email Address</Label>
+                  <Input
+                    id="profileEmail"
+                    type="email"
+                    value={profileData.email}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="your.email@company.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="profilePhone">Phone Number</Label>
+                  <Input
+                    id="profilePhone"
+                    value={profileData.phone}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profileCompany">Company</Label>
+                  <Input
+                    id="profileCompany"
+                    value={profileData.company}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, company: e.target.value }))}
+                    placeholder="Your company name"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profileBio">Bio</Label>
+                <Textarea
+                  id="profileBio"
+                  value={profileData.bio}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="Tell us about yourself..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={handleProfileSave} className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Profile
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Security Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-warning" />
+                Security Settings
+              </CardTitle>
+              <CardDescription>
+                Manage your account security and authentication
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-medium">Change Password</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={securityData.currentPassword}
+                      onChange={(e) => setSecurityData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      placeholder="Enter current password"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={securityData.newPassword}
+                      onChange={(e) => setSecurityData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={securityData.confirmPassword}
+                      onChange={(e) => setSecurityData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                </div>
+                <Button onClick={handlePasswordChange} variant="outline">
+                  <Key className="w-4 h-4 mr-2" />
+                  Change Password
+                </Button>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h4 className="font-medium">Two-Factor Authentication</h4>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <div className="font-medium">SMS Authentication</div>
+                    <div className="text-sm text-muted-foreground">
+                      Receive verification codes via SMS
+                    </div>
+                  </div>
+                  <Switch
+                    checked={securityData.twoFactorEnabled}
+                    onCheckedChange={(checked) => setSecurityData(prev => ({ ...prev, twoFactorEnabled: checked }))}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h4 className="font-medium">Session Management</h4>
+                <div className="space-y-2">
+                  <Label>Session Timeout (minutes)</Label>
+                  <Select
+                    value={securityData.sessionTimeout.toString()}
+                    onValueChange={(value) => setSecurityData(prev => ({ ...prev, sessionTimeout: parseInt(value) }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">15 minutes</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                      <SelectItem value="240">4 hours</SelectItem>
+                      <SelectItem value="480">8 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="system" className="space-y-6">
 
         <Card>
@@ -714,8 +965,8 @@ const Settings: React.FC = () => {
               </h4>
               <div className="grid grid-cols-3 gap-3">
                 <Card 
-                  className={`cursor-pointer transition-all hover:shadow-md ${themeMode === 'light' ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => setThemeMode('light')}
+                  className={`cursor-pointer transition-all hover:shadow-md ${theme === 'light' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setTheme('light')}
                 >
                   <CardContent className="p-3 text-center">
                     <Sun className="w-6 h-6 mx-auto mb-2" />
@@ -723,8 +974,8 @@ const Settings: React.FC = () => {
                   </CardContent>
                 </Card>
                 <Card 
-                  className={`cursor-pointer transition-all hover:shadow-md ${themeMode === 'dark' ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => setThemeMode('dark')}
+                  className={`cursor-pointer transition-all hover:shadow-md ${theme === 'dark' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setTheme('dark')}
                 >
                   <CardContent className="p-3 text-center">
                     <Moon className="w-6 h-6 mx-auto mb-2" />
@@ -732,8 +983,8 @@ const Settings: React.FC = () => {
                   </CardContent>
                 </Card>
                 <Card 
-                  className={`cursor-pointer transition-all hover:shadow-md ${themeMode === 'system' ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => setThemeMode('system')}
+                  className={`cursor-pointer transition-all hover:shadow-md ${theme === 'system' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setTheme('system')}
                 >
                   <CardContent className="p-3 text-center">
                     <Monitor className="w-6 h-6 mx-auto mb-2" />

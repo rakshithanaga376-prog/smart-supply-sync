@@ -12,8 +12,9 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, role?: string) => Promise<boolean>;
   logout: () => void;
+  updateProfile: (updates: Partial<User>) => void;
   isLoading: boolean;
 }
 
@@ -38,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, role?: string): Promise<boolean> => {
     setIsLoading(true);
     
     // Simulate API call delay
@@ -50,9 +51,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         id: '1',
         email: email,
         name: email.split('@')[0] || 'User',
-        role: email.includes('admin') ? 'Admin' : 
-              email.includes('manager') ? 'Manager' : 
-              'Supply Chain Manager',
+        role: (role as UserRole) || 
+              (email.includes('admin') ? 'Admin' : 
+               email.includes('manager') ? 'Manager' : 
+               'Supply Chain Manager'),
         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split('@')[0] || 'User')}&background=2563eb&color=ffffff`
       };
       
@@ -66,6 +68,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return false;
   };
 
+  const updateProfile = (updates: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
@@ -75,6 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     login,
     logout,
+    updateProfile,
     isLoading
   };
 

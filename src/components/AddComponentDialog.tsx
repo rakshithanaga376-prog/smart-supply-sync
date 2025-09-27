@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useInventory } from '@/contexts/InventoryContext';
+import { useInventory, Component } from '@/contexts/InventoryContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,7 +37,7 @@ export const AddComponentDialog: React.FC<AddComponentDialogProps> = ({ onAddCom
     location: '',
     status: 'active'
   });
-  const { suppliers } = useInventory();
+  const { suppliers, addComponent } = useInventory();
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -53,17 +53,21 @@ export const AddComponentDialog: React.FC<AddComponentDialogProps> = ({ onAddCom
     }
 
     const newComponent = {
-      id: Date.now().toString(),
-      ...formData,
+      name: formData.name,
+      category: formData.category as Component['category'],
       currentStock: parseInt(formData.currentStock) || 0,
       optimalStock: parseInt(formData.optimalStock) || 100,
-      unitCost: parseFloat(formData.unitCost) || 0,
+      unit: formData.unit,
+      supplier: formData.supplier,
       leadTime: parseInt(formData.leadTime) || 7,
-      demandTrend: 'stable',
-      lastUpdated: new Date().toISOString(),
-      stockLevel: parseInt(formData.currentStock) || 0 > (parseInt(formData.optimalStock) || 100) * 0.3 ? 'normal' : 'low'
+      cost: parseFloat(formData.unitCost) || 0,
+      status: parseInt(formData.currentStock) || 0 > (parseInt(formData.optimalStock) || 100) * 0.3 ? 'Optimal' as const : 'Low Stock' as const,
+      demandTrend: 'Stable' as const,
+      location: formData.location,
+      lastRestock: new Date()
     };
 
+    addComponent(newComponent);
     onAddComponent?.(newComponent);
     
     toast({

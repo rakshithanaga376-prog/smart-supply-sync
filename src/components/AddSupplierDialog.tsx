@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useInventory } from '@/contexts/InventoryContext';
 
 interface AddSupplierDialogProps {
   onAddSupplier?: (supplier: any) => void;
@@ -33,6 +34,7 @@ export const AddSupplierDialog: React.FC<AddSupplierDialogProps> = ({ onAddSuppl
     leadTime: '',
     paymentTerms: ''
   });
+  const { addSupplier } = useInventory();
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -48,15 +50,20 @@ export const AddSupplierDialog: React.FC<AddSupplierDialogProps> = ({ onAddSuppl
     }
 
     const newSupplier = {
-      id: Date.now().toString(),
-      ...formData,
-      status: 'active',
+      name: formData.name,
+      contact: formData.contact,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      category: formData.category,
       rating: parseFloat(formData.rating) || 4.0,
       leadTime: parseInt(formData.leadTime) || 7,
-      lastOrder: new Date().toISOString(),
-      totalOrders: 0
+      paymentTerms: formData.paymentTerms,
+      onTimeDelivery: 95,
+      location: formData.address || 'Not specified'
     };
 
+    addSupplier(newSupplier);
     onAddSupplier?.(newSupplier);
     
     toast({
