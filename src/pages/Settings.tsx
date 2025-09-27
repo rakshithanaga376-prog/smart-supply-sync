@@ -115,7 +115,10 @@ const Settings: React.FC = () => {
   const handleProfileSave = () => {
     updateProfile({
       name: profileData.name,
-      email: profileData.email
+      email: profileData.email,
+      phone: profileData.phone,
+      company: profileData.company,
+      bio: profileData.bio
     });
     
     toast({

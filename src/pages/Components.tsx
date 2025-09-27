@@ -92,10 +92,7 @@ const Components: React.FC = () => {
           </p>
         </div>
         
-        <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Component
-        </Button>
+        <AddComponentDialog />
       </div>
 
       {/* Filters */}
