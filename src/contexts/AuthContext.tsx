@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export type UserRole = 'Admin' | 'Manager' | 'Supply Chain Manager';
@@ -42,45 +42,70 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-          role: (session.user.user_metadata?.role as UserRole) || 'Manager',
-          avatar: session.user.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.email?.split('@')[0] || 'User')}&background=2563eb&color=ffffff`,
-          phone: session.user.user_metadata?.phone,
-          company: session.user.user_metadata?.company,
-          bio: session.user.user_metadata?.bio
-        };
-        setUser(userData);
-      }
-      setIsLoading(false);
-    });
+    let mounted = true;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-          role: (session.user.user_metadata?.role as UserRole) || 'Manager',
-          avatar: session.user.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.email?.split('@')[0] || 'User')}&background=2563eb&color=ffffff`,
-          phone: session.user.user_metadata?.phone,
-          company: session.user.user_metadata?.company,
-          bio: session.user.user_metadata?.bio
-        };
-        setUser(userData);
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    });
+    const initializeAuth = async () => {
+      try {
+        // Set up auth state listener FIRST
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (!mounted) return;
+          
+          if (session?.user) {
+            const userData: User = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+              role: (session.user.user_metadata?.role as UserRole) || 'Manager',
+              avatar: session.user.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.email?.split('@')[0] || 'User')}&background=2563eb&color=ffffff`,
+              phone: session.user.user_metadata?.phone,
+              company: session.user.user_metadata?.company,
+              bio: session.user.user_metadata?.bio
+            };
+            setUser(userData);
+          } else {
+            setUser(null);
+          }
+          setIsLoading(false);
+        });
 
-    return () => subscription.unsubscribe();
+        // THEN get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (mounted) {
+          if (session?.user) {
+            const userData: User = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+              role: (session.user.user_metadata?.role as UserRole) || 'Manager',
+              avatar: session.user.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.email?.split('@')[0] || 'User')}&background=2563eb&color=ffffff`,
+              phone: session.user.user_metadata?.phone,
+              company: session.user.user_metadata?.company,
+              bio: session.user.user_metadata?.bio
+            };
+            setUser(userData);
+          }
+          setIsLoading(false);
+        }
+
+        return () => {
+          mounted = false;
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    const cleanup = initializeAuth();
+    
+    return () => {
+      mounted = false;
+      cleanup.then(cleanupFn => cleanupFn?.());
+    };
   }, []);
 
   const login = async (email: string, password: string, role?: string): Promise<{ success: boolean; error?: string }> => {
