@@ -36,12 +36,12 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
-    const success = await login(email, password, selectedRole);
+    const result = await login(email, password, selectedRole);
     
-    if (!success) {
+    if (!result.success) {
       toast({
         title: "Login Failed", 
-        description: "Invalid credentials. Please try again.",
+        description: result.error || "Invalid credentials. Please try again.",
         variant: "destructive"
       });
     } else {
@@ -79,7 +79,7 @@ export const LoginPage: React.FC = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-semibold text-center">Sign In</CardTitle>
             <CardDescription className="text-center">
-              Enter any email and password to access the demo
+              Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -111,7 +111,7 @@ export const LoginPage: React.FC = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="demo@inventory.com"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
@@ -123,7 +123,7 @@ export const LoginPage: React.FC = () => {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter any password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="transition-all duration-200 focus:ring-2 focus:ring-primary/20"
@@ -173,7 +173,7 @@ export const LoginPage: React.FC = () => {
         </Card>
 
         <div className="text-center mt-6 text-primary-foreground/60 text-sm">
-          <p>Try: admin@demo.com, manager@demo.com, or any email</p>
+          <p>Create an account or sign in with existing credentials</p>
         </div>
       </div>
     </div>

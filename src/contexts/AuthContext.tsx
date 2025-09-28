@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export type UserRole = 'Admin' | 'Manager' | 'Supply Chain Manager';
 
@@ -15,7 +17,7 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, role?: string) => Promise<boolean>;
+  login: (email: string, password: string, role?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => void;
   isLoading: boolean;
@@ -36,52 +38,114 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string, password: string, role?: string): Promise<boolean> => {
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+          role: (session.user.user_metadata?.role as UserRole) || 'Manager',
+          avatar: session.user.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.email?.split('@')[0] || 'User')}&background=2563eb&color=ffffff`,
+          phone: session.user.user_metadata?.phone,
+          company: session.user.user_metadata?.company,
+          bio: session.user.user_metadata?.bio
+        };
+        setUser(userData);
+      }
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const userData: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+          role: (session.user.user_metadata?.role as UserRole) || 'Manager',
+          avatar: session.user.user_metadata?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.email?.split('@')[0] || 'User')}&background=2563eb&color=ffffff`,
+          phone: session.user.user_metadata?.phone,
+          company: session.user.user_metadata?.company,
+          bio: session.user.user_metadata?.bio
+        };
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string, role?: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Accept any email/password combination for demo purposes
-    if (email && password) {
-      const mockUser: User = {
-        id: '1',
-        email: email,
-        name: email.split('@')[0] || 'User',
-        role: (role as UserRole) || 
-              (email.includes('admin') ? 'Admin' : 
-               email.includes('manager') ? 'Manager' : 
-               'Supply Chain Manager'),
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split('@')[0] || 'User')}&background=2563eb&color=ffffff`
-      };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setIsLoading(false);
+        // Return specific error messages based on Supabase error codes
+        if (error.message.includes('Invalid login credentials')) {
+          return { success: false, error: 'Invalid email or password' };
+        } else if (error.message.includes('Email not confirmed')) {
+          return { success: false, error: 'Please verify your email address' };
+        } else if (error.message.includes('Too many requests')) {
+          return { success: false, error: 'Too many login attempts. Please try again later' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        // Update user metadata with role if provided
+        if (role) {
+          await supabase.auth.updateUser({
+            data: { role }
+          });
+        }
+        
+        setIsLoading(false);
+        return { success: true };
+      }
       
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
       setIsLoading(false);
-      return true;
+      return { success: false, error: 'Authentication failed' };
+    } catch (err) {
+      setIsLoading(false);
+      return { success: false, error: 'Network error. Please try again' };
     }
-    
-    setIsLoading(false);
-    return false;
   };
 
-  const updateProfile = (updates: Partial<User>) => {
+  const updateProfile = async (updates: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...updates };
       setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Update Supabase user metadata
+      await supabase.auth.updateUser({
+        data: {
+          name: updatedUser.name,
+          phone: updatedUser.phone,
+          company: updatedUser.company,
+          bio: updatedUser.bio,
+          role: updatedUser.role
+        }
+      });
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('user');
   };
 
   const value = {
